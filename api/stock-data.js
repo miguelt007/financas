@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
 
     // 2. Define os símbolos das ações que queres buscar.
     // Podes adicionar mais símbolos aqui, separando-os por vírgulas.
-    const symbols = "EDP.LS,REN.LS"; 
+    const symbols = 'EDP.LS,REN.LS,BCP.LS,GALP.LS'; // Adicionadas BCP e GALP 
 
     // 3. Verifica se a API Key está definida. É uma verificação de segurança importante!
     if (!api_key) {

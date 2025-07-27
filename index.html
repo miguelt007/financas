@@ -48,6 +48,7 @@
             padding: 14px 18px;
             text-align: left;
             transition: background-color 0.3s ease;
+            font-size: 0.85em; /* Tamanho da letra da tabela - Ajusta este valor se quiseres! */
         }
         th {
             background-color: #34495e;
@@ -55,7 +56,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            font-size: 1.0em;
+            font-size: 1.0em; /* Este tamanho é para o cabeçalho, mantém ou ajusta */
         }
         tr:nth-child(even) {
             background-color: #f6f8fa;
@@ -176,9 +177,6 @@
 
                     if (data && Array.isArray(data)) {
                         data.forEach(stock => {
-                            // Remover o console.log de depuração aqui, ou manter se ainda precisares de algo
-                            // console.log("Dados do stock:", stock.code, stock.name, stock); 
-
                             const row = stockTableBody.insertRow(); 
 
                             const symbolText = `${stock.code}` + (stock.exchange ? `.${stock.exchange}` : '');
@@ -187,12 +185,12 @@
                             let companyName = stock.name; 
 
                             if (!companyName) {
-                                // AQUI ESTÁ A MUDANÇA: Usamos stock.code.replace('.LS', '')
+                                // Remove o '.LS' do código para procurar o nome correto
                                 switch (stock.code.replace('.LS', '')) { 
                                     case "ALTR": companyName = "Altri SGPS, S.A."; break;
                                     case "BCP": companyName = "Banco Comercial Português, S.A."; break;
                                     case "CORT": companyName = "Corticeira Amorim, SGPS, S.A."; break;
-                                    case "CTTP": companyName = "CTT - Correios de Portugal, S.A."; break; // CTT era o símbolo antigo.
+                                    case "CTTP": companyName = "CTT - Correios de Portugal, S.A."; break; 
                                     case "EDP": companyName = "Energias de Portugal, S.A."; break;
                                     case "EDPR": companyName = "EDP Renováveis, S.A."; break;
                                     case "EGL": companyName = "Mota-Engil, SGPS, S.A."; break;
@@ -200,21 +198,21 @@
                                     case "IBE": companyName = "Ibersol, SGPS, S.A."; break;
                                     case "JMT": companyName = "Jerónimo Martins, SGPS, S.A."; break;
                                     case "NOS": companyName = "NOS, SGPS, S.A."; break;
-                                    case "PHAR": companyName = "PHAROL, SGPS S.A."; break; // Antiga PT SGPS
+                                    case "PHAR": companyName = "PHAROL, SGPS S.A."; break; 
                                     case "REN": companyName = "Redes Energéticas Nacionais, SGPS, S.A."; break;
                                     case "SACY": companyName = "Sonae Capital, SGPS, S.A."; break;
                                     case "SEM": companyName = "Semapa - Sociedade de Investimento e Gestão, SGPS, S.A."; break;
-                                    case "SON": companyName = "Sonae, SGPS, S.A."; break; // Símbolo atual para Sonae
-                                    case "SONC": companyName = "Sonaecom, SGPS, S.A."; break; // Sonaecom
-                                    case "TAG": companyName = "Navigator Company, S.A."; break; // The Navigator Company
-                                    case "UBP": companyName = "United Bank of Portugal (exemplo)"; break; // Confirmar se é este o UBP do PSI20 ou outro
-                                    case "VER": companyName = "Vera Cruz (exemplo)"; break; // Confirmar se é este o VER do PSI20 ou outro
+                                    case "SON": companyName = "Sonae, SGPS, S.A."; break; 
+                                    case "SONC": companyName = "Sonaecom, SGPS, S.A."; break; 
+                                    case "TAG": companyName = "Navigator Company, S.A."; break; 
+                                    case "UBP": companyName = "United Bank of Portugal (símbolo a confirmar)"; break; 
+                                    case "VER": companyName = "Vera Cruz (símbolo a confirmar)"; break; 
 
-                                    // Para os símbolos MSFT, PSI20, RHOT e VRL que não são empresas do PSI20 principal:
+                                    // Símbolos que podem aparecer mas não são empresas do PSI20 principal:
                                     case "MSFT": companyName = "Microsoft Corp. (Listada em Lisboa)"; break; 
                                     case "PSI20": companyName = "PSI20 Índice da Bolsa de Lisboa"; break; 
                                     case "RHOT": companyName = "Raia Drogasil S.A. (Listada em Lisboa)"; break; 
-                                    case "VRL": companyName = "Novabase, SGPS, S.A."; break; // Corrigido VRL para Novabase
+                                    case "VRL": companyName = "Novabase, SGPS, S.A."; break; // Confirmação de VRL para Novabase
                                     
                                     default: companyName = `Nome Desconhecido (${stock.code.replace('.LS', '')})`; 
                                 }

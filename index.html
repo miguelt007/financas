@@ -7,83 +7,64 @@
     <style>
         /* Estilos CSS para a página e a tabela */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #eef2f7;
+            background-color: #f4f4f4;
             color: #333;
-            line-height: 1.6;
         }
         h1 {
-            color: #2c3e50;
+            color: #0056b3;
             text-align: center;
-            margin-bottom: 25px;
-            font-size: 2.5em;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        }
-        .info-box {
-            background-color: #ffffff;
-            border: 1px solid #dcdcdc;
-            padding: 15px 20px;
-            margin: 0 auto 30px auto;
-            width: 90%;
-            max-width: 900px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            text-align: center;
-            font-size: 0.95em;
-            color: #555;
+            margin-bottom: 30px;
         }
         table {
             width: 90%;
             max-width: 1000px;
             border-collapse: collapse;
-            margin: 20px auto;
+            margin: 20px auto; /* Centraliza a tabela */
             background-color: #fff;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-            border-radius: 10px;
-            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden; /* Garante que bordas arredondadas funcionem com bordas da célula */
         }
         th, td {
-            border: 1px solid #e0e0e0;
-            padding: 14px 18px;
+            border: 1px solid #ddd;
+            padding: 12px 15px;
             text-align: left;
-            transition: background-color 0.3s ease;
         }
         th {
-            background-color: #34495e;
+            background-color: #007bff;
             color: white;
-            font-weight: 600;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 1.0em;
         }
         tr:nth-child(even) {
-            background-color: #f6f8fa;
+            background-color: #f8f8f8;
         }
         tr:hover {
-            background-color: #e9eff5;
+            background-color: #e9ecef;
             cursor: pointer;
         }
         #loading {
             text-align: center;
-            padding: 40px;
-            font-size: 1.3em;
-            color: #666;
+            padding: 30px;
+            font-size: 1.4em;
+            color: #555;
             background-color: #fff;
-            border-radius: 10px;
+            border-radius: 8px;
             width: 80%;
             max-width: 600px;
             margin: 50px auto;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         .spinner {
-            border: 5px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #4a90e2; /* Cor mais vibrante */
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #007bff;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             animation: spin 1s linear infinite;
-            margin: 15px auto;
+            margin: 10px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -92,16 +73,10 @@
     </style>
 </head>
 <body>
-    <h1>Dados da Bolsa de Lisboa</h1>
-
-    <div class="info-box">
-        <p>Estes dados são fornecidos pela EOD Historical Data através de um plano gratuito.</p>
-        <p>Os valores apresentados são "em tempo real" com um **atraso de aproximadamente 15-20 minutos**.</p>
-        <p>A tabela é **automaticamente atualizada a cada 15 minutos** para mostrar os dados mais recentes disponíveis.</p>
-    </div>
+    <h1>Dados da Bolsa de Lisboa (EDP e REN)</h1>
 
     <div id="loading">
-        <p>A carregar os dados mais recentes da bolsa...</p>
+        <p>A carregar dados da bolsa...</p>
         <div class="spinner"></div>
     </div>
 
@@ -191,22 +166,15 @@
                 }
             }
 
-            // --- INÍCIO DA LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA ---
-
             // Chama a função para carregar os dados imediatamente quando a página carrega.
             loadStockData();
 
-            // Define um intervalo para atualizar os dados a cada 15 minutos.
-            // (15 minutos * 60 segundos/minuto * 1000 milissegundos/segundo).
-            const updateIntervalMilliseconds = 15 * 60 * 1000; 
-            
-            // Inicia o temporizador que vai chamar loadStockData() repetidamente.
-            setInterval(() => {
-                console.log(`A atualizar dados da bolsa... (${new Date().toLocaleTimeString('pt-PT')})`);
-                loadStockData();
-            }, updateIntervalMilliseconds);
-
-            // --- FIM DA LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA ---
+            // Lógica de atualização automática (que foi removida nesta versão)
+            // const updateIntervalMilliseconds = 15 * 60 * 1000; 
+            // setInterval(() => {
+            //     console.log(`A atualizar dados da bolsa... (${new Date().toLocaleTimeString('pt-PT')})`);
+            //     loadStockData();
+            // }, updateIntervalMilliseconds);
         });
     </script>
 </body>

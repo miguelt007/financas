@@ -5,53 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dados da Bolsa de Lisboa</title>
     <style>
+        /* Estilos CSS para a página e a tabela */
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #f4f4f4;
-        }
-        h1 {
             color: #333;
         }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
         table {
-            width: 80%;
+            width: 90%;
+            max-width: 1000px;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin: 20px auto; /* Centraliza a tabela */
             background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden; /* Garante que bordas arredondadas funcionem com bordas da célula */
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 12px 15px;
             text-align: left;
         }
         th {
-            background-color: #4CAF50;
+            background-color: #007bff;
             color: white;
+            font-weight: bold;
+            text-transform: uppercase;
         }
         tr:nth-child(even) {
-            background-color: #f2f2f2;
+            background-color: #f8f8f8;
         }
         tr:hover {
-            background-color: #ddd;
+            background-color: #e9ecef;
+            cursor: pointer;
         }
         #loading {
             text-align: center;
-            padding: 20px;
-            font-size: 1.2em;
+            padding: 30px;
+            font-size: 1.4em;
             color: #555;
+            background-color: #fff;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            margin: 50px auto;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
 <body>
     <h1>Dados da Bolsa de Lisboa (EDP e REN)</h1>
-    <div id="loading">A carregar dados...</div>
+
+    <div id="loading">
+        <p>A carregar dados da bolsa...</p>
+        <style>
+            .spinner {
+                border: 4px solid rgba(0, 0, 0, 0.1);
+                border-left-color: #007bff;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                animation: spin 1s linear infinite;
+                margin: 10px auto;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+        <div class="spinner"></div>
+    </div>
+
     <table id="stockTable">
         <thead>
             <tr>
                 <th>Símbolo</th>
                 <th>Nome da Empresa</th>
-                <th>Preço de Fecho</th>
+                <th>Preço de Fecho (€)</th>
                 <th>Volume</th>
                 <th>Última Atualização</th>
             </tr>
@@ -61,7 +97,97 @@
     </table>
 
     <script>
-        // --- CÓDIGO JAVASCRIPT SERÁ COLOCADO AQUI ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const stockTableBody = document.querySelector('#stockTable tbody');
+            const loadingDiv = document.getElementById('loading');
+
+            // --- SIMULAÇÃO DA RESPOSTA DA API EODHD ---
+            // IMPORTANTE: Em um cenário real/produção, esta chamada NUNCA deve ser feita
+            // diretamente do JavaScript no navegador.
+            // A sua API Key seria exposta! A chamada à API EODHD deve ser feita por um backend (servidor).
+            // Este `mockApiResponse` simula os dados que o seu backend enviaria para o frontend.
+            const mockApiResponse = [
+                {
+                    "code": "EDP",
+                    "exchange": "LS",
+                    "timestamp": 1721923200, // Exemplo: 2024-07-25 16:00:00 WEST
+                    "gmtoffset": 0,
+                    "open": 4.100,
+                    "high": 4.150,
+                    "low": 4.080,
+                    "close": 4.135,
+                    "volume": 1234567,
+                    "previousClose": 4.110,
+                    "change": 0.025,
+                    "change_p": 0.61
+                },
+                {
+                    "code": "REN",
+                    "exchange": "LS",
+                    "timestamp": 1721923200, // Exemplo: 2024-07-25 16:00:00 WEST
+                    "gmtoffset": 0,
+                    "open": 2.500,
+                    "high": 2.530,
+                    "low": 2.490,
+                    "close": 2.515,
+                    "volume": 876543,
+                    "previousClose": 2.500,
+                    "change": 0.015,
+                    "change_p": 0.60
+                }
+            ];
+
+            // Função para formatar o timestamp Unix para uma data e hora legível
+            function formatTimestamp(timestamp) {
+                if (!timestamp) return 'N/A';
+                const date = new Date(timestamp * 1000); // Converte segundos Unix para milissegundos
+                return date.toLocaleString('pt-PT', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+
+            // Função principal para carregar e exibir os dados
+            function loadStockData() {
+                loadingDiv.style.display = 'block'; // Mostra a mensagem de carregamento
+
+                // Simulamos um pequeno atraso (como se estivéssemos a buscar dados da rede)
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none'; // Esconde a mensagem de carregamento
+
+                    if (mockApiResponse && Array.isArray(mockApiResponse)) {
+                        mockApiResponse.forEach(stock => {
+                            const row = stockTableBody.insertRow(); // Cria uma nova linha na tabela
+
+                            // Insere as células (colunas) na linha com os dados
+                            row.insertCell().textContent = `${stock.code}.${stock.exchange}`;
+                            
+                            // Define um nome de empresa. Nota: A API real-time da EODHD não inclui
+                            // o nome completo da empresa. Teria que ser obtido de outra API (EODHD Fundamental Data)
+                            // ou de uma lista estática no seu código.
+                            let companyName = "Desconhecido";
+                            if (stock.code === "EDP") companyName = "Energias de Portugal, S.A.";
+                            else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
+                            row.insertCell().textContent = companyName;
+
+                            row.insertCell().textContent = stock.close ? stock.close.toFixed(3) : 'N/A'; // Formata para 3 casas decimais
+                            row.insertCell().textContent = stock.volume ? stock.volume.toLocaleString('pt-PT') : 'N/A';
+                            row.insertCell().textContent = formatTimestamp(stock.timestamp);
+                        });
+                    } else {
+                        // Se não houver dados ou o formato for inesperado
+                        stockTableBody.innerHTML = '<tr><td colspan="5">Nenhum dado encontrado ou formato inesperado.</td></tr>';
+                    }
+                }, 1500); // Simula um atraso de 1.5 segundos
+            }
+
+            // Chama a função para carregar os dados quando a página estiver pronta
+            loadStockData();
+        });
     </script>
 </body>
 </html>

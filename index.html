@@ -126,7 +126,7 @@
 
             // URL do teu próprio backend no Vercel.
             // O Vercel vai mapear este caminho para a tua Serverless Function.
-            const backendApiUrl = '/api/stock-data';
+            const backendApiUrl = '/api/stock-data'; // Usamos '/api' em minúsculas agora!
 
             // Função para formatar o timestamp Unix para uma data e hora legível.
             function formatTimestamp(timestamp) {
@@ -152,7 +152,7 @@
                     
                     if (!response.ok) {
                         // Se o backend devolver um erro (status HTTP 4xx ou 5xx)
-                        const errorData = await response.json();
+                        const errorData = await response.json(); // Tenta ler como JSON
                         throw new Error(`Erro do servidor: ${response.status} - ${errorData.error || 'Erro desconhecido.'}`);
                     }
                     
@@ -174,9 +174,14 @@
                             else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
                             row.insertCell().textContent = companyName;
 
-                            // Formata o preço para 3 casas decimais e o volume com separadores de milhar.
-                            row.insertCell().textContent = stock.close ? stock.close.toFixed(3) : 'N/A';
-                            row.insertCell().textContent = stock.volume ? stock.volume.toLocaleString('pt-PT') : 'N/A';
+                            // --- ALTERAÇÃO AQUI: Verificação de tipo antes de usar toFixed e toLocaleString ---
+                            const closePrice = typeof stock.close === 'number' ? stock.close.toFixed(3) : 'N/A';
+                            const volume = typeof stock.volume === 'number' ? stock.volume.toLocaleString('pt-PT') : 'N/A';
+                            
+                            row.insertCell().textContent = closePrice;
+                            row.insertCell().textContent = volume;
+                            // --- FIM DA ALTERAÇÃO ---
+
                             row.insertCell().textContent = formatTimestamp(stock.timestamp);
                         });
                     } else {
@@ -187,7 +192,12 @@
                     // Trata quaisquer erros que ocorram durante o processo de requisição/parsing.
                     loadingDiv.textContent = `Erro ao carregar dados: ${error.message}. Por favor, tenta novamente mais tarde ou verifica a consola do navegador.`;
                     console.error("Erro ao buscar dados da API via backend:", error);
-                    stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro ao carregar dados. Veja a consola do navegador (F12) para mais detalhes.</td></tr>';
+                    // Adicionei uma verificação para não tentar parsear JSON se a resposta não for OK e o erro for sobre JSON inválido
+                    if (error.message.includes("is not valid JSON") && error.message.includes("404")) {
+                        stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro: A função de dados da bolsa não foi encontrada no servidor (erro 404). Verifique se a pasta `api` e o ficheiro `stock-data.js` estão corretos no GitHub e Vercel.</td></tr>';
+                    } else {
+                        stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro ao carregar dados. Veja a consola do navegador (F12) para mais detalhes.</td></tr>';
+                    }
                 }
             }
 

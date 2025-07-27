@@ -124,14 +124,18 @@
             const stockTableBody = document.querySelector('#stockTable tbody');
             const loadingDiv = document.getElementById('loading');
 
-            // URL do teu próprio backend no Vercel.
-            // O Vercel vai mapear este caminho para a tua Serverless Function.
-            const backendApiUrl = '/api/stock-data'; // Usamos '/api' em minúsculas agora!
+            const backendApiUrl = '/api/stock-data'; 
 
-            // Função para formatar o timestamp Unix para uma data e hora legível.
             function formatTimestamp(timestamp) {
-                if (!timestamp) return 'N/A';
-                const date = new Date(timestamp * 1000); // Converte segundos Unix para milissegundos
+                // Se o timestamp for nulo, indefinido, zero, ou não for um número válido, retorna 'N/A'
+                if (!timestamp || typeof timestamp !== 'number' || isNaN(timestamp)) {
+                    return 'N/A';
+                }
+                const date = new Date(timestamp * 1000); 
+                // Verifica se a data é válida após a criação
+                if (isNaN(date.getTime())) {
+                    return 'N/A';
+                }
                 return date.toLocaleString('pt-PT', {
                     year: 'numeric',
                     month: '2-digit',
@@ -142,81 +146,86 @@
                 });
             }
 
-            // Função principal para carregar e exibir os dados.
             async function loadStockData() {
-                loadingDiv.style.display = 'block'; // Mostra a mensagem de carregamento
-                stockTableBody.innerHTML = ''; // Limpa qualquer dado anterior da tabela
+                loadingDiv.style.display = 'block'; 
+                stockTableBody.innerHTML = ''; 
 
                 try {
-                    const response = await fetch(backendApiUrl); // Faz a requisição ao teu backend no Vercel.
+                    const response = await fetch(backendApiUrl); 
                     
                     if (!response.ok) {
-                        // Se o backend devolver um erro (status HTTP 4xx ou 5xx)
-                        const errorData = await response.json(); // Tenta ler como JSON
-                        throw new Error(`Erro do servidor: ${response.status} - ${errorData.error || 'Erro desconhecido.'}`);
+                        const errorText = await response.text(); // Lê como texto para depurar qualquer HTML de erro
+                        console.error("Resposta de erro do backend (texto):", errorText);
+                        // Tenta parsear como JSON apenas se o Content-Type for JSON
+                        const contentType = response.headers.get("content-type");
+                        let errorDetails = `Erro desconhecido. Status: ${response.status}`;
+                        if (contentType && contentType.indexOf("application/json") !== -1) {
+                            try {
+                                const errorData = JSON.parse(errorText);
+                                errorDetails = errorData.error || errorText;
+                            } catch (e) {
+                                errorDetails = `Resposta não-JSON: ${errorText}`;
+                            }
+                        } else {
+                            errorDetails = `Resposta não-JSON: ${errorText}`;
+                        }
+                        
+                        throw new Error(`Erro do servidor: ${response.status} - ${errorDetails}`);
                     }
                     
-                    const data = await response.json(); // Converte a resposta para JSON.
+                    const data = await response.json(); 
 
-                    loadingDiv.style.display = 'none'; // Esconde a mensagem de carregamento.
+                    loadingDiv.style.display = 'none'; 
 
                     if (data && Array.isArray(data)) {
-                        // Se os dados forem válidos (um array)
                         data.forEach(stock => {
-                            const row = stockTableBody.insertRow(); // Insere uma nova linha na tabela.
+                            const row = stockTableBody.insertRow(); 
 
-                            // Adiciona as células (colunas) à linha com os dados da ação.
-                            row.insertCell().textContent = `${stock.code}.${stock.exchange}`;
+                            // Melhorar a exibição do símbolo (garantindo que exchange não é undefined)
+                            const symbolText = `${stock.code}` + (stock.exchange ? `.${stock.exchange}` : '');
+                            row.insertCell().textContent = symbolText;
                             
-                            // Define o nome completo da empresa.
-                            let companyName = "Desconhecido";
-                            if (stock.code === "EDP") companyName = "Energias de Portugal, S.A.";
-                            else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
+                            // Tentar obter o nome da empresa do campo 'name' da API, se disponível
+                            // Caso contrário, usa a lógica antiga ou 'Desconhecido'
+                            let companyName = stock.name || "Desconhecido";
+                            // Se stock.name não vier e souberes que são EDP ou REN pelo código, podes forçar
+                            if (!stock.name) {
+                                if (stock.code === "EDP") companyName = "Energias de Portugal, S.A.";
+                                else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
+                            }
                             row.insertCell().textContent = companyName;
 
-                            // --- ALTERAÇÃO AQUI: Verificação de tipo antes de usar toFixed e toLocaleString ---
-                            const closePrice = typeof stock.close === 'number' ? stock.close.toFixed(3) : 'N/A';
-                            const volume = typeof stock.volume === 'number' ? stock.volume.toLocaleString('pt-PT') : 'N/A';
+                            // Formatação robusta para Preço e Volume
+                            // Converte para número primeiro, se for string, e só depois formata
+                            const closeValue = parseFloat(stock.close); // Tenta converter para número
+                            const closePrice = typeof closeValue === 'number' && !isNaN(closeValue) ? closeValue.toFixed(3) : 'N/A';
+                            
+                            const volumeValue = parseFloat(stock.volume); // Tenta converter para número
+                            const volume = typeof volumeValue === 'number' && !isNaN(volumeValue) ? volumeValue.toLocaleString('pt-PT') : 'N/A';
                             
                             row.insertCell().textContent = closePrice;
                             row.insertCell().textContent = volume;
-                            // --- FIM DA ALTERAÇÃO ---
-
+                            
                             row.insertCell().textContent = formatTimestamp(stock.timestamp);
                         });
                     } else {
-                        // Caso não haja dados ou o formato seja inesperado.
-                        stockTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum dado encontrado ou formato inesperado.</td></tr>';
+                        stockTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum dado encontrado ou formato inesperado da API.</td></tr>';
+                        console.warn("Dados recebidos não são um array ou estão vazios:", data);
                     }
                 } catch (error) {
-                    // Trata quaisquer erros que ocorram durante o processo de requisição/parsing.
-                    loadingDiv.textContent = `Erro ao carregar dados: ${error.message}. Por favor, tenta novamente mais tarde ou verifica a consola do navegador.`;
+                    loadingDiv.textContent = `Erro ao carregar dados: ${error.message}. Por favor, tenta novamente mais tarde.`;
                     console.error("Erro ao buscar dados da API via backend:", error);
-                    // Adicionei uma verificação para não tentar parsear JSON se a resposta não for OK e o erro for sobre JSON inválido
-                    if (error.message.includes("is not valid JSON") && error.message.includes("404")) {
-                        stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro: A função de dados da bolsa não foi encontrada no servidor (erro 404). Verifique se a pasta `api` e o ficheiro `stock-data.js` estão corretos no GitHub e Vercel.</td></tr>';
-                    } else {
-                        stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro ao carregar dados. Veja a consola do navegador (F12) para mais detalhes.</td></tr>';
-                    }
+                    stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro ao carregar dados. Verifique a consola do navegador (F12) para detalhes.</td></tr>';
                 }
             }
 
-            // --- INÍCIO DA LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA ---
-
-            // Chama a função para carregar os dados imediatamente quando a página carrega.
+            // Lógica de atualização automática
             loadStockData();
-
-            // Define um intervalo para atualizar os dados a cada 15 minutos.
-            // (15 minutos * 60 segundos/minuto * 1000 milissegundos/segundo).
             const updateIntervalMilliseconds = 15 * 60 * 1000; 
-            
-            // Inicia o temporizador que vai chamar loadStockData() repetidamente.
             setInterval(() => {
                 console.log(`A atualizar dados da bolsa... (${new Date().toLocaleTimeString('pt-PT')})`);
                 loadStockData();
             }, updateIntervalMilliseconds);
-
-            // --- FIM DA LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA ---
         });
     </script>
 </body>

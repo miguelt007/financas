@@ -5,89 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dados da Bolsa de Lisboa</title>
     <style>
-        /* Estilos CSS para a página e a tabela */
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #f4f4f4;
-            color: #333;
         }
         h1 {
-            color: #0056b3;
-            text-align: center;
-            margin-bottom: 30px;
+            color: #333;
         }
         table {
-            width: 90%;
-            max-width: 1000px;
+            width: 80%;
             border-collapse: collapse;
-            margin: 20px auto; /* Centraliza a tabela */
+            margin-top: 20px;
             background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden; /* Garante que bordas arredondadas funcionem com bordas da célula */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 12px 15px;
+            padding: 10px;
             text-align: left;
         }
         th {
-            background-color: #007bff;
+            background-color: #4CAF50;
             color: white;
-            font-weight: bold;
-            text-transform: uppercase;
         }
         tr:nth-child(even) {
-            background-color: #f8f8f8;
+            background-color: #f2f2f2;
         }
         tr:hover {
-            background-color: #e9ecef;
-            cursor: pointer;
+            background-color: #ddd;
         }
         #loading {
             text-align: center;
-            padding: 30px;
-            font-size: 1.4em;
+            padding: 20px;
+            font-size: 1.2em;
             color: #555;
-            background-color: #fff;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 600px;
-            margin: 50px auto;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #007bff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <h1>Dados da Bolsa de Lisboa (EDP e REN)</h1>
-
-    <div id="loading">
-        <p>A carregar dados da bolsa...</p>
-        <div class="spinner"></div>
-    </div>
-
+    <div id="loading">A carregar dados...</div>
     <table id="stockTable">
         <thead>
             <tr>
                 <th>Símbolo</th>
                 <th>Nome da Empresa</th>
-                <th>Preço de Fecho (€)</th>
+                <th>Preço de Fecho</th>
                 <th>Volume</th>
-                <th>Última Atualização (dd/mm/aaaa hh:mm:ss)</th>
+                <th>Última Atualização</th>
             </tr>
         </thead>
         <tbody>
@@ -95,87 +61,7 @@
     </table>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const stockTableBody = document.querySelector('#stockTable tbody');
-            const loadingDiv = document.getElementById('loading');
-
-            // URL do teu próprio backend no Vercel.
-            // O Vercel vai mapear este caminho para a tua Serverless Function.
-            const backendApiUrl = '/api/stock-data';
-
-            // Função para formatar o timestamp Unix para uma data e hora legível.
-            function formatTimestamp(timestamp) {
-                if (!timestamp) return 'N/A';
-                const date = new Date(timestamp * 1000); // Converte segundos Unix para milissegundos
-                return date.toLocaleString('pt-PT', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-            }
-
-            // Função principal para carregar e exibir os dados.
-            async function loadStockData() {
-                loadingDiv.style.display = 'block'; // Mostra a mensagem de carregamento
-                stockTableBody.innerHTML = ''; // Limpa qualquer dado anterior da tabela
-
-                try {
-                    const response = await fetch(backendApiUrl); // Faz a requisição ao teu backend no Vercel.
-                    
-                    if (!response.ok) {
-                        // Se o backend devolver um erro (status HTTP 4xx ou 5xx)
-                        const errorData = await response.json();
-                        throw new Error(`Erro do servidor: ${response.status} - ${errorData.error || 'Erro desconhecido.'}`);
-                    }
-                    
-                    const data = await response.json(); // Converte a resposta para JSON.
-
-                    loadingDiv.style.display = 'none'; // Esconde a mensagem de carregamento.
-
-                    if (data && Array.isArray(data)) {
-                        // Se os dados forem válidos (um array)
-                        data.forEach(stock => {
-                            const row = stockTableBody.insertRow(); // Insere uma nova linha na tabela.
-
-                            // Adiciona as células (colunas) à linha com os dados da ação.
-                            row.insertCell().textContent = `${stock.code}.${stock.exchange}`;
-                            
-                            // Define o nome completo da empresa.
-                            let companyName = "Desconhecido";
-                            if (stock.code === "EDP") companyName = "Energias de Portugal, S.A.";
-                            else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
-                            row.insertCell().textContent = companyName;
-
-                            // Formata o preço para 3 casas decimais e o volume com separadores de milhar.
-                            row.insertCell().textContent = stock.close ? stock.close.toFixed(3) : 'N/A';
-                            row.insertCell().textContent = stock.volume ? stock.volume.toLocaleString('pt-PT') : 'N/A';
-                            row.insertCell().textContent = formatTimestamp(stock.timestamp);
-                        });
-                    } else {
-                        // Caso não haja dados ou o formato seja inesperado.
-                        stockTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum dado encontrado ou formato inesperado.</td></tr>';
-                    }
-                } catch (error) {
-                    // Trata quaisquer erros que ocorram durante o processo de requisição/parsing.
-                    loadingDiv.textContent = `Erro ao carregar dados: ${error.message}. Por favor, tenta novamente mais tarde ou verifica a consola do navegador.`;
-                    console.error("Erro ao buscar dados da API via backend:", error);
-                    stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro ao carregar dados. Veja a consola do navegador (F12) para mais detalhes.</td></tr>';
-                }
-            }
-
-            // Chama a função para carregar os dados imediatamente quando a página carrega.
-            loadStockData();
-
-            // Lógica de atualização automática (que foi removida nesta versão)
-            // const updateIntervalMilliseconds = 15 * 60 * 1000; 
-            // setInterval(() => {
-            //     console.log(`A atualizar dados da bolsa... (${new Date().toLocaleTimeString('pt-PT')})`);
-            //     loadStockData();
-            // }, updateIntervalMilliseconds);
-        });
+        // --- CÓDIGO JAVASCRIPT SERÁ COLOCADO AQUI ---
     </script>
 </body>
 </html>

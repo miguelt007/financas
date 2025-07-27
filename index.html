@@ -145,7 +145,8 @@
                     second: '2-digit'
                 });
             }
-
+            console.log("Dados do stock:", stock.code, stock.name, stock);
+            
             async function loadStockData() {
                 loadingDiv.style.display = 'block'; 
                 stockTableBody.innerHTML = ''; 

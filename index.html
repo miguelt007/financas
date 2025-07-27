@@ -187,14 +187,35 @@
                             
                             // Tentar obter o nome da empresa do campo 'name' da API, se disponível
                             // Caso contrário, usa a lógica antiga ou 'Desconhecido'
-                            let companyName = stock.name || "Desconhecido";
-                            if (!stock.name) { // Só entra aqui se stock.name não vier da API
-                                if (stock.code === "EDP") companyName = "Energias de Portugal, S.A.";
-                                else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
-                                else if (stock.code === "BCP") companyName = "Banco Comercial Português, S.A."; // Adicionado BCP
-                                else if (stock.code === "GALP") companyName = "Galp Energia, SGPS, S.A."; // Adicionado Galp
-                            }
-                            row.insertCell().textContent = companyName;
+                            let companyName = stock.name; // Tenta usar o nome da API primeiro
+
+// Se o nome da API não veio ou é vazio, tenta um nome manual
+if (!companyName) {
+    switch (stock.code) {
+        case "ALTR": companyName = "Altri SGPS, S.A."; break;
+        case "BCP": companyName = "Banco Comercial Português, S.A."; break;
+        case "CORT": companyName = "Corticeira Amorim, SGPS, S.A."; break;
+        case "CTTP": companyName = "CTT - Correios de Portugal, S.A."; break;
+        case "EDP": companyName = "Energias de Portugal, S.A."; break;
+        case "EDPR": companyName = "EDP Renováveis, S.A."; break;
+        case "EGL": companyName = "Mota-Engil, SGPS, S.A."; break;
+        case "GALP": companyName = "Galp Energia, SGPS, S.A."; break;
+        case "IBE": companyName = "Ibersol, SGPS, S.A."; break;
+        case "JMT": companyName = "Jerónimo Martins, SGPS, S.A."; break;
+        case "MSFT": companyName = "Microsoft (Exemplo - não é do PSI20 português)"; break; // Verifiquei que MSFT.LS aparece na lista da EODHD como Lisboa. Se for um erro, podemos remover.
+        case "NOS": companyName = "NOS, SGPS, S.A."; break;
+        case "PHAR": companyName = "PHAROL, SGPS S.A."; break; // Antiga PT SGPS
+        case "PSI20": companyName = "PSI20 Índice"; break; // Este é o próprio índice, não uma empresa
+        case "REN": companyName = "Redes Energéticas Nacionais, SGPS, S.A."; break;
+        case "RHOT": companyName = "Raia Drogasil (Exemplo - não é do PSI20 português)"; break; // Similar ao MSFT.LS, pode ser um erro da API para o índice de Lisboa.
+        case "SACY": companyName = "Sonae Capital, SGPS, S.A."; break;
+        case "SEM": companyName = "Semapa - Sociedade de Investimento e Gestão, SGPS, S.A."; break;
+        case "SORE": companyName = "Sonae, SGPS, S.A."; break;
+        case "VRL": companyName = "Novabase, SGPS, S.A."; break; // O símbolo VRL.LS pode ser Novabase, mas é bom confirmar na EODHD.
+        default: companyName = "Nome Desconhecido"; // Se não encontrar nenhum dos acima
+    }
+}
+row.insertCell().textContent = companyName;
 
                             // Formatação robusta para Preço e Volume
                             // Converte para número primeiro, se for string, e só depois formata

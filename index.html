@@ -5,55 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dados da Bolsa de Lisboa</title>
     <style>
+        /* Estilos CSS para a página e a tabela */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 20px;
-            background-color: #f4f4f4;
+            background-color: #eef2f7;
+            color: #333;
+            line-height: 1.6;
         }
         h1 {
-            color: #333;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .info-box {
+            background-color: #ffffff;
+            border: 1px solid #dcdcdc;
+            padding: 15px 20px;
+            margin: 0 auto 30px auto;
+            width: 90%;
+            max-width: 900px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+            font-size: 0.95em;
+            color: #555;
         }
         table {
-            width: 80%;
+            width: 90%;
+            max-width: 1000px;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin: 20px auto;
             background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            border-radius: 10px;
+            overflow: hidden;
         }
         th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
+            border: 1px solid #e0e0e0;
+            padding: 14px 18px;
             text-align: left;
+            transition: background-color 0.3s ease;
         }
         th {
-            background-color: #4CAF50;
+            background-color: #34495e;
             color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 1.0em;
         }
         tr:nth-child(even) {
-            background-color: #f2f2f2;
+            background-color: #f6f8fa;
         }
         tr:hover {
-            background-color: #ddd;
+            background-color: #e9eff5;
+            cursor: pointer;
         }
         #loading {
             text-align: center;
-            padding: 20px;
-            font-size: 1.2em;
-            color: #555;
+            padding: 40px;
+            font-size: 1.3em;
+            color: #666;
+            background-color: #fff;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            margin: 50px auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        .spinner {
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4a90e2; /* Cor mais vibrante */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <h1>Dados da Bolsa de Lisboa (EDP e REN)</h1>
-    <div id="loading">A carregar dados...</div>
+    <h1>Dados da Bolsa de Lisboa</h1>
+
+    <div class="info-box">
+        <p>Estes dados são fornecidos pela EOD Historical Data através de um plano gratuito.</p>
+        <p>Os valores apresentados são "em tempo real" com um **atraso de aproximadamente 15-20 minutos**.</p>
+        <p>A tabela é **automaticamente atualizada a cada 15 minutos** para mostrar os dados mais recentes disponíveis.</p>
+    </div>
+
+    <div id="loading">
+        <p>A carregar os dados mais recentes da bolsa...</p>
+        <div class="spinner"></div>
+    </div>
+
     <table id="stockTable">
         <thead>
             <tr>
                 <th>Símbolo</th>
                 <th>Nome da Empresa</th>
-                <th>Preço de Fecho</th>
+                <th>Preço de Fecho (€)</th>
                 <th>Volume</th>
-                <th>Última Atualização</th>
+                <th>Última Atualização (dd/mm/aaaa hh:mm:ss)</th>
             </tr>
         </thead>
         <tbody>
@@ -61,7 +120,94 @@
     </table>
 
     <script>
-        // --- CÓDIGO JAVASCRIPT SERÁ COLOCADO AQUI ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const stockTableBody = document.querySelector('#stockTable tbody');
+            const loadingDiv = document.getElementById('loading');
+
+            // URL do teu próprio backend no Vercel.
+            // O Vercel vai mapear este caminho para a tua Serverless Function.
+            const backendApiUrl = '/api/stock-data';
+
+            // Função para formatar o timestamp Unix para uma data e hora legível.
+            function formatTimestamp(timestamp) {
+                if (!timestamp) return 'N/A';
+                const date = new Date(timestamp * 1000); // Converte segundos Unix para milissegundos
+                return date.toLocaleString('pt-PT', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+
+            // Função principal para carregar e exibir os dados.
+            async function loadStockData() {
+                loadingDiv.style.display = 'block'; // Mostra a mensagem de carregamento
+                stockTableBody.innerHTML = ''; // Limpa qualquer dado anterior da tabela
+
+                try {
+                    const response = await fetch(backendApiUrl); // Faz a requisição ao teu backend no Vercel.
+                    
+                    if (!response.ok) {
+                        // Se o backend devolver um erro (status HTTP 4xx ou 5xx)
+                        const errorData = await response.json();
+                        throw new Error(`Erro do servidor: ${response.status} - ${errorData.error || 'Erro desconhecido.'}`);
+                    }
+                    
+                    const data = await response.json(); // Converte a resposta para JSON.
+
+                    loadingDiv.style.display = 'none'; // Esconde a mensagem de carregamento.
+
+                    if (data && Array.isArray(data)) {
+                        // Se os dados forem válidos (um array)
+                        data.forEach(stock => {
+                            const row = stockTableBody.insertRow(); // Insere uma nova linha na tabela.
+
+                            // Adiciona as células (colunas) à linha com os dados da ação.
+                            row.insertCell().textContent = `${stock.code}.${stock.exchange}`;
+                            
+                            // Define o nome completo da empresa.
+                            let companyName = "Desconhecido";
+                            if (stock.code === "EDP") companyName = "Energias de Portugal, S.A.";
+                            else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
+                            row.insertCell().textContent = companyName;
+
+                            // Formata o preço para 3 casas decimais e o volume com separadores de milhar.
+                            row.insertCell().textContent = stock.close ? stock.close.toFixed(3) : 'N/A';
+                            row.insertCell().textContent = stock.volume ? stock.volume.toLocaleString('pt-PT') : 'N/A';
+                            row.insertCell().textContent = formatTimestamp(stock.timestamp);
+                        });
+                    } else {
+                        // Caso não haja dados ou o formato seja inesperado.
+                        stockTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum dado encontrado ou formato inesperado.</td></tr>';
+                    }
+                } catch (error) {
+                    // Trata quaisquer erros que ocorram durante o processo de requisição/parsing.
+                    loadingDiv.textContent = `Erro ao carregar dados: ${error.message}. Por favor, tenta novamente mais tarde ou verifica a consola do navegador.`;
+                    console.error("Erro ao buscar dados da API via backend:", error);
+                    stockTableBody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">Erro ao carregar dados. Veja a consola do navegador (F12) para mais detalhes.</td></tr>';
+                }
+            }
+
+            // --- INÍCIO DA LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA ---
+
+            // Chama a função para carregar os dados imediatamente quando a página carrega.
+            loadStockData();
+
+            // Define um intervalo para atualizar os dados a cada 15 minutos.
+            // (15 minutos * 60 segundos/minuto * 1000 milissegundos/segundo).
+            const updateIntervalMilliseconds = 15 * 60 * 1000; 
+            
+            // Inicia o temporizador que vai chamar loadStockData() repetidamente.
+            setInterval(() => {
+                console.log(`A atualizar dados da bolsa... (${new Date().toLocaleTimeString('pt-PT')})`);
+                loadStockData();
+            }, updateIntervalMilliseconds);
+
+            // --- FIM DA LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA ---
+        });
     </script>
 </body>
 </html>

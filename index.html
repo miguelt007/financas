@@ -188,10 +188,11 @@
                             // Tentar obter o nome da empresa do campo 'name' da API, se disponível
                             // Caso contrário, usa a lógica antiga ou 'Desconhecido'
                             let companyName = stock.name || "Desconhecido";
-                            // Se stock.name não vier e souberes que são EDP ou REN pelo código, podes forçar
-                            if (!stock.name) {
+                            if (!stock.name) { // Só entra aqui se stock.name não vier da API
                                 if (stock.code === "EDP") companyName = "Energias de Portugal, S.A.";
                                 else if (stock.code === "REN") companyName = "Redes Energéticas Nacionais, SGPS, S.A.";
+                                else if (stock.code === "BCP") companyName = "Banco Comercial Português, S.A."; // Adicionado BCP
+                                else if (stock.code === "GALP") companyName = "Galp Energia, SGPS, S.A."; // Adicionado Galp
                             }
                             row.insertCell().textContent = companyName;
 
